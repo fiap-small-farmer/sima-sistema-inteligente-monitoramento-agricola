@@ -13,10 +13,11 @@ DHTesp dhtSensor;
 // Inicialização do objeto LCD
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
+
  // Função que formata a escrita da temp. e umid. mediante os valores e exibi no display LCD
 void displayLcd(const TempAndHumidity& data) {
   
-  // Declaração das variáveis temperatura e umidade
+  // Declaração das váriaveis temperatura e umidade
   float temperature = data.temperature;
   float humidity = data.humidity;
 
@@ -55,16 +56,18 @@ void displayLcd(const TempAndHumidity& data) {
   lcd.print("%");
 }
 
+
 // Função para atualizar temperatura e umidade caso ocorra mudança nos valores
 void updatedisplayTempAndHumid(const TempAndHumidity& data) {
 
-  // Declaração das variáveis temperatura e umidade
+  // Declaração das váriaveis temperatura e umidade
   float temperature = data.temperature;
   float humidity = data.humidity;
 
   // Inicializa com -1 para garantir a atualização na primeira leitura
   static float lastTemperature = -1;
   static float lastHumidity = -1;
+
 
   // Verifica se ouve atualização nos dados da temperatura e umidade e caso verdadeiro atualiza o display LCD
   if (temperature != lastTemperature || humidity != lastHumidity) {
@@ -156,3 +159,4 @@ void loop() {
   // Aguarda 2 segundos antes de realizar a próxima leitura
   delay(2000);
 }
+
