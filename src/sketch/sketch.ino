@@ -5,9 +5,9 @@
 #include <LiquidCrystal_I2C.h>
 
 const int dhtPin = 23;             // Pino do sensor DHT22
-const int irrigationRelay = 19;    // Pino do relé de irrigação (LED AZUL ACLARO)
-const int ventilationRelay = 18;   // Pino do relé da ventilação (LED AZUL ESCURO)
-const int heatingRelay = 5;   // Pino do relé da aquecimento (LED VIOLETA)
+const int irrigationRelay = 19;    // Pino do relé de irrigação                (LED AZUL ACLARO)
+const int ventilationRelay = 18;   // Pino do relé da ventilação/Resfriamento  (LED AZUL ESCURO)
+const int heatingRelay = 5;        // Pino do relé da aquecimento              (LED VIOLETA)
 
 // Inicialização do objeto para o sensor DHT
 DHTesp dhtSensor;
@@ -17,7 +17,6 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 
  // Função que formata a escrita da temp. e umid. mediante os valores e exibi no display LCD
 void displayLcd(const TempAndHumidity& data) {
-  
   // Declaração das variáveis temperatura e umidade
   float temperature = data.temperature;
   float humidity = data.humidity;
@@ -59,7 +58,6 @@ void displayLcd(const TempAndHumidity& data) {
 
 // Função para atualizar temperatura e umidade caso ocorra mudança nos valores
 void updatedisplayTempAndHumid(const TempAndHumidity& data) {
-
   // Declaração das variáveis temperatura e umidade
   float temperature = data.temperature;
   float humidity = data.humidity;
@@ -113,28 +111,22 @@ bool controlIrrigation(const TempAndHumidity& data) {
   return statusIrrigation; // Retorna o status da irrigação
 }
 
-// Função para controle da ventilação
-bool ventilationControl(const TempAndHumidity& data) {
+// Função para controle da ventilação e resfriamento
+bool ventilationAndCoolingControl(const TempAndHumidity& data) {
   // Declara a variável de status da ventilação
   bool ventilationStatus;
 
-  // Declaração da variável umidade
+  // Declaração das variáveis temperatura e umidade
   float humidity = data.humidity;
+  float temperature = data.temperature;
 
-  /* Ativar a ventilação quando a umidade do ar estiver acima de 75%,
-  para reduzir a umidade até atingir o nível aceitável. Desativar quando a umidade estiver
-  dentro do intervalo ideal (65-75%).
-  */
-
-  if (humidity > 75) {
+  // Ativa a ventilação se a umidade for maior que 75% ou se a temperatura for maior que 26ºC
+  if (humidity > 75 || temperature > 26) {
     digitalWrite(ventilationRelay, HIGH);
     ventilationStatus = true;
 
-  } else if (humidity >= 65 && humidity <= 75) {
-    digitalWrite(ventilationRelay, LOW);
-    ventilationStatus = false;
-
-  } else {
+  // Desativa a ventilação se a umidade estiver entre 65-75% e a temperatura for menor que 26ºC
+  } else if (humidity >= 65 && humidity <= 75 && temperature < 26) {
     digitalWrite(ventilationRelay, LOW);
     ventilationStatus = false;
   }
@@ -144,18 +136,13 @@ bool ventilationControl(const TempAndHumidity& data) {
 
 // Função para controle de aquecimento
 bool heatingControl(const TempAndHumidity& data) {
-
   // Declara a variável de status do aquecimento
   bool heatingStatus;
 
   // Declaração da variável temperatura
   float temperature = data.temperature;
 
-  /* Ativar o aquecimento se a temperatura estiver abaixo de 
-  20ºC, para manter um ambiente ideal para os tomates. 
-  Desativar o aquecimento quando a temperatura atingir o mínimo de 20ºC.
-  */
-
+  // Temperatura menor que 20ºC, ativar o relé de aquecimento
   if (temperature < 20) {
     digitalWrite(heatingRelay, HIGH);
     heatingStatus = true;
@@ -176,14 +163,10 @@ void setup() {
   // Configura o sensor DHT (modelo DHT22) no pino especificado
   dhtSensor.setup(dhtPin, DHTesp::DHT22);
 
-  // Define o pino do relé de irrigação como saída
-  pinMode(irrigationRelay, OUTPUT);
-
-  // Define o pino do relé de ventilação como saída
-  pinMode(ventilationRelay, OUTPUT);
-
-  // Define o pino do relé do aquecimento como saída
-  pinMode(heatingRelay, OUTPUT);
+  // Define os pino dos relés
+  pinMode(irrigationRelay, OUTPUT);   // Irrigação
+  pinMode(ventilationRelay, OUTPUT);  // Ventilação e resfriamento
+  pinMode(heatingRelay, OUTPUT);      // Aquecimento
 
   lcd.init(); // Inicializa o display lcd
   lcd.backlight(); // Liga a luz de fundo do display lcd
@@ -217,18 +200,18 @@ void loop() {
   // Chama a função que controla a irrigação e retorna o status
   bool statusIrrigation = controlIrrigation(data);
 
-  // Chama a função de controle da ventilação e retorna o status
-  bool ventilationStatus = ventilationControl(data);
+  // Chama a função de controle da ventilação/resfriamento e retorna o status
+  bool ventilationAndCoolingStatus = ventilationAndCoolingControl(data);
 
   // Chama a função para controle de aquecimento e retorna o status
   bool heatingStatus = heatingControl(data);
 
   // Imprime os valores de temperatura, umidade e status da irrigação no terminal serial
-  Serial.println("Temp: " + String(data.temperature, 1) + 
-                " C, Umid: " + String(data.humidity, 1) + 
+  Serial.println("Temperatura: " + String(data.temperature, 1) + 
+                " C, Umidade: " + String(data.humidity, 1) + 
                 " %, Irrigação: " + (statusIrrigation ? "Ligado" : "Desligado") +
-                " Ventilação: " + (ventilationStatus ? "Ligado, " : "Desligado, ") +
-                " Aquecimento: " + (heatingStatus ? "Ligado" : "Desligado")
+                ", Ventilação/Resfriamento: " + (ventilationAndCoolingStatus ? "Ligado" : "Desligado") +
+                ", Aquecimento: " + (heatingStatus ? "Ligado" : "Desligado")
                 );
 
   // Aguarda 2 segundos antes de realizar a próxima leitura

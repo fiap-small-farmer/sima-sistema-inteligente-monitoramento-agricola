@@ -63,14 +63,14 @@
         <td>Aquecimento é desativado</td>
     </tr>
     <tr>
-        <td><input type="checkbox"></td>
+        <td><input type="checkbox" checked></td>
         <td>9</td>
         <td>Temperatura = 28ºC</td>
         <td>Relé de ventilação é ativado para resfriamento</td>
         <td>Resfriamento é ativado</td>
     </tr>
     <tr>
-        <td><input type="checkbox"></td>
+        <td><input type="checkbox" checked></td>
         <td>10</td>
         <td>Temperatura = 25ºC</td>
         <td>Relé de ventilação é desativado</td>
