@@ -13,6 +13,7 @@ DHTesp dhtSensor;
 // Inicialização do objeto LCD
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
+
  // Função que formata a escrita da temp. e umid. mediante os valores e exibi no display LCD
 void displayLcd(const TempAndHumidity& data) {
   
@@ -55,6 +56,7 @@ void displayLcd(const TempAndHumidity& data) {
   lcd.print("%");
 }
 
+
 // Função para atualizar temperatura e umidade caso ocorra mudança nos valores
 void updatedisplayTempAndHumid(const TempAndHumidity& data) {
 
@@ -65,6 +67,7 @@ void updatedisplayTempAndHumid(const TempAndHumidity& data) {
   // Inicializa com -1 para garantir a atualização na primeira leitura
   static float lastTemperature = -1;
   static float lastHumidity = -1;
+
 
   // Verifica se ouve atualização nos dados da temperatura e umidade e caso verdadeiro atualiza o display LCD
   if (temperature != lastTemperature || humidity != lastHumidity) {
@@ -82,25 +85,29 @@ void updatedisplayTempAndHumid(const TempAndHumidity& data) {
 }
 
 // Função para controle de irrigação
-String controlIrrigation(const TempAndHumidity& data) {
+bool controlIrrigation(const TempAndHumidity& data) {
   // Declara a variável de status da irrigação
-  String statusIrrigation;
+  bool statusIrrigation;
+
+  // Declaração das variáveis temperatura e umidade
+  float temperature = data.temperature;
+  float humidity = data.humidity;
 
   // Verificação da temp. e umid. seguindo a lógica para cultivo de tomate para iniciar ou não a irrigação
-  if (data.humidity < 65 && (data.temperature >= 20 && data.temperature <= 26)) {
+  if (humidity < 65 && (temperature >= 20 && temperature <= 26)) {
     digitalWrite(irrigationRelay, HIGH);
-    statusIrrigation = "Ligado"; 
+    statusIrrigation = true; 
   } 
-  else if (data.humidity >= 75) {
+  else if (humidity >= 75) {
     digitalWrite(irrigationRelay, LOW);
-    statusIrrigation = "Desligado"; 
+    statusIrrigation = false; 
   } 
   else {
     digitalWrite(irrigationRelay, LOW);
-    statusIrrigation = "Desligado"; 
+    statusIrrigation = false; 
   }
 
-  return statusIrrigation; // Retorne o status
+  return statusIrrigation; // Retorna o status da irrigação
 }
 
 // Inicialização do código e definição das configurações que precisam ser executadas no início da programa
@@ -114,11 +121,9 @@ void setup() {
   // Define o pino do relé de irrigação como saída
   pinMode(irrigationRelay, OUTPUT);
 
-
   lcd.init(); // Inicializa o display lcd
   lcd.backlight(); // Liga a luz de fundo do display lcd
   
-
   // Posiciona o cursor na coluna e linha correta e exibi os textos de inicialização
   lcd.setCursor(1, 0); 
   lcd.print("Monitoramento");
@@ -145,14 +150,14 @@ void loop() {
   // Atualiza o display com os valores de temperatura e umidade
   updatedisplayTempAndHumid(data);
   
-  // Chama a função que controla a irrigação e retorna o status como String
-  String statusIrrigation = controlIrrigation(data);
+  // Chama a função que controla a irrigação e retorna o status
+  bool statusIrrigation = controlIrrigation(data);
 
   // Imprime os valores de temperatura, umidade e status da irrigação no terminal serial
-  Serial.println("Temp.: " + String(data.temperature, 1) + 
-                 " C, Umid.: " + String(data.humidity, 1) + 
-                 " %, Irrigação: " + statusIrrigation);
-  
+  Serial.println("Temp: " + String(data.temperature, 1) + 
+                " C, Umid: " + String(data.humidity, 1) + 
+                " %, Irrigação: " + (statusIrrigation ? "Ligado" : "Desligado"));
+
   // Aguarda 2 segundos antes de realizar a próxima leitura
   delay(2000);
 }
