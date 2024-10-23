@@ -9,7 +9,7 @@
       "id": "dht1",
       "top": -38.1,
       "left": -72.6,
-      "attrs": { "temperature": "25.1", "humidity": "57.5" }
+      "attrs": { "temperature": "30.4", "humidity": "79" }
     },
     {
       "type": "wokwi-lcd1602",
@@ -51,6 +51,22 @@
       "left": 315.4,
       "rotate": 180,
       "attrs": { "value": "150" }
+    },
+    { "type": "wokwi-relay-module", "id": "relay3", "top": 422.6, "left": 144, "attrs": {} },
+    {
+      "type": "wokwi-led",
+      "id": "led3",
+      "top": 380.4,
+      "left": 282.6,
+      "attrs": { "color": "purple", "flip": "1" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r2",
+      "top": 465.05,
+      "left": 315.4,
+      "rotate": 180,
+      "attrs": { "value": "150" }
     }
   ],
   "connections": [
@@ -76,7 +92,14 @@
     [ "relay2:GND", "relay1:GND", "black", [ "h-19.2", "v-10" ] ],
     [ "relay2:VCC", "relay1:VCC", "red", [ "h-28.8", "v-115.2" ] ],
     [ "esp:18", "relay2:IN", "#8f4814", [ "h163.2", "v153.6" ] ],
-    [ "esp:5V", "lcd1:VCC", "red", [ "h-19.05", "v-345.6", "h211.2", "v76.7" ] ]
+    [ "esp:5V", "lcd1:VCC", "red", [ "h-19.05", "v-345.6", "h211.2", "v76.7" ] ],
+    [ "relay2:COM", "relay3:COM", "red", [ "h20.4", "v113.8" ] ],
+    [ "relay3:NO", "led3:A", "red", [ "h39.6", "v-1.8" ] ],
+    [ "r2:1", "r3:1", "black", [ "v0", "h9.6", "v-115.2", "h-19.2" ] ],
+    [ "led3:C", "r2:2", "black", [ "v0" ] ],
+    [ "relay2:VCC", "relay3:VCC", "red", [ "h-28.8", "v115.2" ] ],
+    [ "relay3:GND", "relay2:GND", "black", [ "h-19.2", "v-0.4" ] ],
+    [ "esp:5", "relay3:IN", "#8f4814", [ "h153.6", "v259.2", "h67.2" ] ]
   ],
   "dependencies": {}
 }
