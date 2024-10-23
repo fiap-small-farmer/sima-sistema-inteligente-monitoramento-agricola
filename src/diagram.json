@@ -8,8 +8,8 @@
       "type": "wokwi-dht22",
       "id": "dht1",
       "top": -38.1,
-      "left": -72.6,
-      "attrs": { "temperature": "30.4", "humidity": "79" }
+      "left": -63,
+      "attrs": { "temperature": "25.1", "humidity": "66.5" }
     },
     {
       "type": "wokwi-lcd1602",
@@ -67,7 +67,8 @@
       "left": 315.4,
       "rotate": 180,
       "attrs": { "value": "150" }
-    }
+    },
+    { "type": "wokwi-buzzer", "id": "bz1", "top": 12, "left": 357, "attrs": { "volume": "0.1" } }
   ],
   "connections": [
     [ "esp:TX", "$serialMonitor:RX", "", [] ],
@@ -99,7 +100,9 @@
     [ "led3:C", "r2:2", "black", [ "v0" ] ],
     [ "relay2:VCC", "relay3:VCC", "red", [ "h-28.8", "v115.2" ] ],
     [ "relay3:GND", "relay2:GND", "black", [ "h-19.2", "v-0.4" ] ],
-    [ "esp:5", "relay3:IN", "#8f4814", [ "h153.6", "v259.2", "h67.2" ] ]
+    [ "esp:5", "relay3:IN", "#8f4814", [ "h153.6", "v259.2", "h67.2" ] ],
+    [ "bz1:1", "esp:GND.2", "black", [ "v0", "h-38.4", "v-144", "h-422.4" ] ],
+    [ "bz1:2", "esp:17", "#8f4814", [ "v48", "h-461.2", "v67.2" ] ]
   ],
   "dependencies": {}
 }

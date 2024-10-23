@@ -77,25 +77,32 @@
         <td>Resfriamento é desativado</td>
     </tr>
     <tr>
-        <td><input type="checkbox"></td>
+        <td><input type="checkbox" checked></td>
         <td>11</td>
         <td>Temperatura = -10ºC</td>
         <td>Buzzer é ativado para alerta sonoro</td>
         <td>Alerta sonoro é emitido</td>
     </tr>
     <tr>
-        <td><input type="checkbox"></td>
+        <td><input type="checkbox" checked></td>
         <td>12</td>
-        <td>Temperatura = -36ºC</td>
-        <td>Buzzer é ativado para alerta sonoro</td>
-        <td>Alerta sonoro é emitido</td>
+        <td>Temperatura = 30ºC</td>
+        <td>Buzzer é desativado para alerta sonoro</td>
+        <td>Alerta sonoro não é emitido</td>
     </tr>
     <tr>
-        <td><input type="checkbox"></td>
+        <td><input type="checkbox" checked></td>
         <td>13</td>
         <td>Umidade = 50%</td>
         <td>Buzzer é ativado para alerta sonoro</td>
         <td>Alerta sonoro é emitido</td>
+    </tr>
+    <tr>
+        <td><input type="checkbox" checked></td>
+        <td>14</td>
+        <td>Umidade = 70%</td>
+        <td>Buzzer é desativado para alerta sonoro</td>
+        <td>Alerta sonoro não é emitido</td>
     </tr>
     <!-- Continue adding rows as needed -->
 </table>

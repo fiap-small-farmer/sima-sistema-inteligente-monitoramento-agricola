@@ -4,10 +4,11 @@
 // Inclusão da biblioteca para o controle do display LCD via interface I2C
 #include <LiquidCrystal_I2C.h>
 
-const int dhtPin = 23;             // Pino do sensor DHT22
-const int irrigationRelay = 19;    // Pino do relé de irrigação                (LED AZUL ACLARO)
-const int ventilationRelay = 18;   // Pino do relé da ventilação/Resfriamento  (LED AZUL ESCURO)
-const int heatingRelay = 5;        // Pino do relé da aquecimento              (LED VIOLETA)
+#define dhtPin 23            // Pino do sensor DHT22
+#define irrigationRelay 19   // Pino do relé de irrigação                (LED AZUL ACLARO)
+#define ventilationRelay 18  // Pino do relé da ventilação/Resfriamento  (LED AZUL ESCURO)
+#define heatingRelay 5       // Pino do relé da aquecimento              (LED VIOLETA)
+#define speakerPin 17        // Pino do buzzer para alertas
 
 // Inicialização do objeto para o sensor DHT
 DHTesp dhtSensor;
@@ -155,6 +156,37 @@ bool heatingControl(const TempAndHumidity& data) {
   return heatingStatus;
 }
 
+// Função para gerar um alerta sonoro em casos de estados críticos
+bool alertCriticalConditions(const TempAndHumidity& data){
+  // Declara a variável de status para alerta crítico de condições de temperatura e umidade
+  bool statusAlertCriticalConditions;
+
+  // Declaração das variáveis temperatura e umidade
+  float humidity = data.humidity;
+  float temperature = data.temperature;
+
+  // Verifica se a temperatura está fora do intervalo seguro ou se a umidade está fora do intervalo seguro
+  if(temperature < 12 || temperature > 35 || humidity < 65 || humidity > 75){
+    
+    // Gera um alerta sonoro
+    for(int i = 0; i < 2; i++) {
+      tone(speakerPin, 500, 150); 
+      delay(150);
+      noTone(speakerPin); 
+      delay(200);
+    }
+
+    statusAlertCriticalConditions = true;
+  
+  } else {
+    noTone(speakerPin); // Desativa o som caso as condições estejam dentro dos parâmetros
+    statusAlertCriticalConditions = false;
+  }
+
+  return statusAlertCriticalConditions;
+}
+
+
 // Inicialização do código e definição das configurações que precisam ser executadas no início da programa
 void setup() {
   // Inicializa a comunicação serial com velocidade de 115200 bps (bits por segundo)
@@ -167,6 +199,9 @@ void setup() {
   pinMode(irrigationRelay, OUTPUT);   // Irrigação
   pinMode(ventilationRelay, OUTPUT);  // Ventilação e resfriamento
   pinMode(heatingRelay, OUTPUT);      // Aquecimento
+
+  // Define o pino do Buzzer como saída
+  pinMode(speakerPin, OUTPUT);
 
   lcd.init(); // Inicializa o display lcd
   lcd.backlight(); // Liga a luz de fundo do display lcd
@@ -206,14 +241,23 @@ void loop() {
   // Chama a função para controle de aquecimento e retorna o status
   bool heatingStatus = heatingControl(data);
 
+  // Chama a função de alerta para condições de temperatura e umidade críticas
+  bool statusAlertCriticalConditions = alertCriticalConditions(data);
+
   // Imprime os valores de temperatura, umidade e status da irrigação no terminal serial
   Serial.println("Temperatura: " + String(data.temperature, 1) + 
                 " C, Umidade: " + String(data.humidity, 1) + 
                 " %, Irrigação: " + (statusIrrigation ? "Ligado" : "Desligado") +
                 ", Ventilação/Resfriamento: " + (ventilationAndCoolingStatus ? "Ligado" : "Desligado") +
-                ", Aquecimento: " + (heatingStatus ? "Ligado" : "Desligado")
+                ", Aquecimento: " + (heatingStatus ? "Ligado" : "Desligado") +
+                ", Alerta Estado Crítico: " + (statusAlertCriticalConditions ? "Ligado" : "Desligado")
                 );
 
-  // Aguarda 2 segundos antes de realizar a próxima leitura
-  delay(2000);
+  // Aguarda 1 segundo se alerta crítico estiver ativo ou 2 segundos caso não
+  if (statusAlertCriticalConditions){
+    delay(1000);
+
+  }else{
+    delay(2000);
+  }
 }
