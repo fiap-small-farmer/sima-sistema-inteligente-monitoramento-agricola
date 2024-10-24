@@ -9,7 +9,7 @@
       "id": "dht1",
       "top": -38.1,
       "left": -63,
-      "attrs": { "temperature": "12.7", "humidity": "70" }
+      "attrs": { "temperature": "22", "humidity": "60" }
     },
     {
       "type": "wokwi-lcd1602",
@@ -18,7 +18,6 @@
       "left": 34.4,
       "attrs": { "pins": "i2c" }
     },
-    { "type": "wokwi-relay-module", "id": "relay1", "top": 192.2, "left": 144, "attrs": {} },
     {
       "type": "wokwi-led",
       "id": "led1",
@@ -113,7 +112,8 @@
       "left": 133,
       "rotate": 180,
       "attrs": { "value": "150" }
-    }
+    },
+    { "type": "wokwi-junction", "id": "j1", "top": -139.2, "left": -427.2, "attrs": {} }
   ],
   "connections": [
     [ "esp:TX", "$serialMonitor:RX", "", [] ],
@@ -124,19 +124,11 @@
     [ "lcd1:GND", "esp:GND.2", "black", [ "h-28.8", "v105.6" ] ],
     [ "lcd1:SDA", "esp:21", "#8f4814", [ "h-19.2", "v134.6" ] ],
     [ "esp:22", "lcd1:SCL", "#8f4814", [ "h105.6", "v-96" ] ],
-    [ "relay1:VCC", "esp:5V", "red", [ "h-28.8", "v96", "h-288.15" ] ],
-    [ "relay1:GND", "esp:GND.2", "black", [ "h-134.4", "v-106" ] ],
-    [ "esp:19", "relay1:IN", "#8f4814", [ "h172.8", "v48" ] ],
-    [ "vcc1:VCC", "relay1:COM", "red", [ "v0" ] ],
-    [ "led1:A", "relay1:NO", "red", [ "v0" ] ],
     [ "led1:C", "r1:2", "black", [ "v0" ] ],
     [ "r1:1", "gnd1:GND", "black", [ "h201.6", "v9.6" ] ],
     [ "led2:A", "relay2:NO", "red", [ "v0" ] ],
     [ "led2:C", "r3:2", "black", [ "v0" ] ],
-    [ "relay2:COM", "relay1:COM", "red", [ "h20.4", "v-116.6" ] ],
     [ "r3:1", "r1:1", "black", [ "v0", "h9.6", "v-115.2" ] ],
-    [ "relay2:GND", "relay1:GND", "black", [ "h-19.2", "v-10" ] ],
-    [ "relay2:VCC", "relay1:VCC", "red", [ "h-28.8", "v-115.2" ] ],
     [ "esp:18", "relay2:IN", "#8f4814", [ "h163.2", "v153.6" ] ],
     [ "esp:5V", "lcd1:VCC", "red", [ "h-19.05", "v-345.6", "h211.2", "v76.7" ] ],
     [ "relay2:COM", "relay3:COM", "red", [ "h20.4", "v113.8" ] ],
@@ -156,7 +148,9 @@
     [ "r5:1", "r4:1", "black", [ "v0", "h9.6", "v-19.2" ] ],
     [ "led5:A", "esp:13", "green", [ "v0", "h-240", "v336" ] ],
     [ "led4:A", "esp:12", "green", [ "v9.6", "h-288", "v316.8" ] ],
-    [ "led6:A", "esp:14", "green", [ "v19.2", "h-336", "v288" ] ]
+    [ "led6:A", "esp:14", "green", [ "v19.2", "h-336", "v288" ] ],
+    [ "led1:A", "esp:19", "green", [ "v0" ] ],
+    [ "relay2:COM", "vcc1:VCC", "red", [ "h20.4", "v-126.2" ] ]
   ],
   "dependencies": {}
 }

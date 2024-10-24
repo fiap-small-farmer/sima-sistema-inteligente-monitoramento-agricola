@@ -5,9 +5,9 @@
 #include <LiquidCrystal_I2C.h>
 
 #define dhtPin 23                   // Pino do sensor DHT22
-#define irrigationRelay 19          // Pino do relé de irrigação                (LED AZUL ACLARO)
-#define ventilationRelay 18         // Pino do relé da ventilação/Resfriamento  (LED AZUL ESCURO)
-#define heatingRelay 5              // Pino do relé da aquecimento              (LED VIOLETA)
+#define irrigationPwmPin 19         // Pino do motor para controle PWM de irrigação (LED AZUL ACLARO)
+#define ventilationRelay 18         // Pino do relé da ventilação/Resfriamento      (LED AZUL ESCURO)
+#define heatingRelay 5              // Pino do relé da aquecimento                  (LED VIOLETA)
 #define speakerPin 17               // Pino do buzzer para alertas
 #define statusLedPinOk 13           // Pino do led verde
 #define acceptableStatusLedPin 12   // Pino do led amarelo
@@ -19,7 +19,8 @@ DHTesp dhtSensor;
 // Inicialização do objeto LCD
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
- // Função que formata a escrita da temp. e umid. mediante os valores e exibi no display LCD
+
+// Função que formata a escrita da temp. e umid. mediante os valores e exibi no display LCD
 void displayLcd(const TempAndHumidity& data) {
   // Declaração das variáveis temperatura e umidade
   float temperature = data.temperature;
@@ -30,22 +31,22 @@ void displayLcd(const TempAndHumidity& data) {
   String humidityString = "Umid:  " + String(humidity, 2);
 
   // Ajuste de formatação para exibição no display LCD, mediante aos valores de temperatura e umidade
-  if(temperature < 10 && temperature >= 0){
+  if (temperature < 10 && temperature >= 0) {
     tempString = "Temp:   " + String(temperature, 2);
-  } 
-  else if(temperature < 0 && temperature <= -10){
+  }
+  else if (temperature < 0 && temperature <= -10) {
     tempString = "Temp: " + String(temperature, 2);
   }
 
-  if(humidity < 10){
+  if (humidity < 10) {
     humidityString = "Umid:   " + String(humidity, 2);
   }
 
-  if(humidity >= 100){
+  if (humidity >= 100) {
     humidityString = "Umid: " + String(humidity, 2);
   }
 
-  
+
   // Exibe temperatura e umidade no LCD
   lcd.setCursor(1, 0);
   lcd.print(tempString);
@@ -86,33 +87,32 @@ void updatedisplayTempAndHumid(const TempAndHumidity& data) {
   }
 }
 
-// Função para controle de irrigação
-bool controlIrrigation(const TempAndHumidity& data) {
-  // Declara a variável de status da irrigação
-  bool statusIrrigation;
+// Função para controle do fluxo de água do sistema de irrigação com PWM
+float controlIrrigationPWM(const TempAndHumidity& data) {
+    // Declaração das variáveis temperatura e umidade
+    float temperature = data.temperature;
+    float humidity = data.humidity;
 
-  // Declaração das variáveis temperatura e umidade
-  float temperature = data.temperature;
-  float humidity = data.humidity;
+    // Declaração variável do fluxo de água %
+    float waterFlowInPercentage = 0;
 
-  /* Ativar a irrigação quando a umidade estiver abaixo de 65% e a temperatura 
-  estiver dentro da faixa ideal (Entre 20 e 26 C). Desativar a irrigação quando a umidade atingir 75%.
-  */
+    // Lógica para desligar a irrigação quando a temperatura for muito baixa ou muito alta
+    if (temperature < 20 || temperature > 26 || humidity > 75) {
+        waterFlowInPercentage = 0;  // Desativa irrigação
+    } 
+    // Fluxo proporcional para umidade entre 0% e 65% com temperatura ideal
+    else if (humidity <= 65) {
+        waterFlowInPercentage = map(humidity, 0, 65, 100, 50);  // Mapeia fluxo de 100% a 50%
+    }
+    // Fluxo proporcional para umidade entre >65% e <=75% com temperatura ideal
+    else if (humidity > 65 && humidity <= 75) {
+        waterFlowInPercentage = map(humidity, 66, 75, 49, 0);  // Mapeia fluxo de <50% a 0%
+    }
 
-  if (humidity < 65 && (temperature >= 20 && temperature <= 26)) {
-    digitalWrite(irrigationRelay, HIGH);
-    statusIrrigation = true; 
-  } 
-  else if (humidity >= 75) {
-    digitalWrite(irrigationRelay, LOW);
-    statusIrrigation = false; 
-  } 
-  else {
-    digitalWrite(irrigationRelay, LOW);
-    statusIrrigation = false; 
-  }
+    // Ajuste do PWM da bomba
+    analogWrite(irrigationPwmPin, map(waterFlowInPercentage, 0, 100, 0, 255)); 
 
-  return statusIrrigation; // Retorna o status da irrigação
+    return waterFlowInPercentage;
 }
 
 // Função para controle da ventilação e resfriamento
@@ -129,7 +129,7 @@ bool ventilationAndCoolingControl(const TempAndHumidity& data) {
     digitalWrite(ventilationRelay, HIGH);
     ventilationStatus = true;
 
-  // Desativa a ventilação se a umidade estiver entre 65-75% e a temperatura for menor que 26ºC
+    // Desativa a ventilação se a umidade estiver entre 65-75% e a temperatura for menor que 26ºC
   } else if (humidity >= 65 && humidity <= 75 && temperature < 26) {
     digitalWrite(ventilationRelay, LOW);
     ventilationStatus = false;
@@ -160,7 +160,7 @@ bool heatingControl(const TempAndHumidity& data) {
 }
 
 // Função para gerar um alerta sonoro em casos de estados críticos
-bool alertCriticalConditions(const TempAndHumidity& data){
+bool alertCriticalConditions(const TempAndHumidity& data) {
   // Declara a variável de status para alerta crítico de condições de temperatura e umidade
   bool statusAlertCriticalConditions;
 
@@ -169,18 +169,18 @@ bool alertCriticalConditions(const TempAndHumidity& data){
   float temperature = data.temperature;
 
   // Verifica se a temperatura está fora do intervalo seguro ou se a umidade está fora do intervalo seguro
-  if(temperature < 12 || temperature > 35 || humidity < 60 || humidity > 80){
-    
+  if (temperature < 12 || temperature > 35 || humidity < 60 || humidity > 80) {
+
     // Gera um alerta sonoro
-    for(int i = 0; i < 2; i++) {
-      tone(speakerPin, 226.2, 150); 
+    for (int i = 0; i < 2; i++) {
+      tone(speakerPin, 226.2, 150);
       delay(150);
-      noTone(speakerPin); 
+      noTone(speakerPin);
       delay(200);
     }
 
     statusAlertCriticalConditions = true;
-  
+
   } else {
     noTone(speakerPin); // Desativa o som caso as condições estejam dentro dos parâmetros
     statusAlertCriticalConditions = false;
@@ -206,7 +206,7 @@ String statusIndication(const TempAndHumidity& data) {
     generalStatus = "OK";
   }
   // Condição para status "Aceitável"
-  else if ((temperature >= 12 && temperature < 20) || (temperature > 26 && temperature <= 35) || 
+  else if ((temperature >= 12 && temperature < 20) || (temperature > 26 && temperature <= 35) ||
            (humidity >= 60 && humidity < 65) || (humidity > 75 && humidity <= 80)) {
     digitalWrite(statusLedPinOk, LOW); // LED Verde apagado
     digitalWrite(acceptableStatusLedPin, HIGH); // LED Amarelo aceso
@@ -232,35 +232,36 @@ void setup() {
   // Configura o sensor DHT (modelo DHT22) no pino especificado
   dhtSensor.setup(dhtPin, DHTesp::DHT22);
 
+  // Define o pino para gerar sinal PWM para controle de irrigação
+  pinMode(irrigationPwmPin, OUTPUT);   // Irrigação
+  
   // Define os pino dos relés
-  pinMode(irrigationRelay, OUTPUT);   // Irrigação
-  pinMode(ventilationRelay, OUTPUT);  // Ventilação e resfriamento
-  pinMode(heatingRelay, OUTPUT);      // Aquecimento
+  pinMode(ventilationRelay, OUTPUT);   // Ventilação e resfriamento
+  pinMode(heatingRelay, OUTPUT);       // Aquecimento
 
   // Define o pino do Buzzer como saída
   pinMode(speakerPin, OUTPUT);
 
   // Define os pinos de Led do status geral como saída
-  pinMode(statusLedPinOk, OUTPUT);  
-  pinMode(acceptableStatusLedPin, OUTPUT);  
-  pinMode(criticalStatusLedPin, OUTPUT);  
-
+  pinMode(statusLedPinOk, OUTPUT);
+  pinMode(acceptableStatusLedPin, OUTPUT);
+  pinMode(criticalStatusLedPin, OUTPUT);
 
   lcd.init(); // Inicializa o display lcd
   lcd.backlight(); // Liga a luz de fundo do display lcd
-  
+
   // Posiciona o cursor na coluna e linha correta e exibi os textos de inicialização
-  lcd.setCursor(1, 0); 
+  lcd.setCursor(1, 0);
   lcd.print("Monitoramento");
-  
-  lcd.setCursor(2, 1);  
+
+  lcd.setCursor(2, 1);
   lcd.print("Agricola");
 
   // Exibe uma animação de pontos, imprimindo um ponto a cada 500 ms
   for (int i = 11; i <= 13; i++) {
-    lcd.setCursor(i, 1); 
-    lcd.print(".");    
-    delay(500);        
+    lcd.setCursor(i, 1);
+    lcd.print(".");
+    delay(500);
   }
 
   // Limpa o display LCD
@@ -274,9 +275,9 @@ void loop() {
 
   // Atualiza o display com os valores de temperatura e umidade
   updatedisplayTempAndHumid(data);
-  
-  // Chama a função que controla a irrigação e retorna o status
-  bool statusIrrigation = controlIrrigation(data);
+
+  // Chama a função que controla a irrigação por PWM e retorna o status
+  float statusIrrigation = controlIrrigationPWM(data);
 
   // Chama a função de controle da ventilação/resfriamento e retorna o status
   bool ventilationAndCoolingStatus = ventilationAndCoolingControl(data);
@@ -293,19 +294,20 @@ void loop() {
   // Imprime os valores de temperatura, umidade e status da irrigação no terminal serial
   Serial.println(' ');
   Serial.println("Status Geral: " + generalStatus + "\n" +
-             "Temperatura: " + String(data.temperature, 1) + "ºC\n" +
-             "Umidade: " + String(data.humidity, 1) + "%\n" +
-             "Irrigação: " + (statusIrrigation ? "Ligado" : "Desligado") + "\n" +
-             "Ventilação/Resfriamento: " + (ventilationAndCoolingStatus ? "Ligado" : "Desligado") + "\n" +
-             "Aquecimento: " + (heatingStatus ? "Ligado" : "Desligado") + "\n" +
-             "Alerta Estado Crítico: " + (statusAlertCriticalConditions ? "Ligado" : "Desligado")
-            );
+                 "Temperatura: " + String(data.temperature, 1) + "ºC\n" +
+                 "Umidade: " + String(data.humidity, 1) + "%\n" +
+                 "Irrigação: " + (statusIrrigation > 0 ? "Ligado" : "Desligado") + "\n" +
+                 "Fluxo de Irrigação: " + statusIrrigation + "%" + "\n" +
+                 "Ventilação/Resfriamento: " + (ventilationAndCoolingStatus ? "Ligado" : "Desligado") + "\n" +
+                 "Aquecimento: " + (heatingStatus ? "Ligado" : "Desligado") + "\n" +
+                 "Alerta Estado Crítico: " + (statusAlertCriticalConditions ? "Ligado" : "Desligado")
+                );
 
   // Aguarda 1 segundo se alerta crítico estiver ativo ou 2 segundos caso não
-  if (statusAlertCriticalConditions){
+  if (statusAlertCriticalConditions) {
     delay(1000);
 
-  }else{
+  } else {
     delay(2000);
   }
 }
