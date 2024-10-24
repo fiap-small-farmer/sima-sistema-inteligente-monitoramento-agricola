@@ -4,11 +4,14 @@
 // Inclusão da biblioteca para o controle do display LCD via interface I2C
 #include <LiquidCrystal_I2C.h>
 
-#define dhtPin 23            // Pino do sensor DHT22
-#define irrigationRelay 19   // Pino do relé de irrigação                (LED AZUL ACLARO)
-#define ventilationRelay 18  // Pino do relé da ventilação/Resfriamento  (LED AZUL ESCURO)
-#define heatingRelay 5       // Pino do relé da aquecimento              (LED VIOLETA)
-#define speakerPin 17        // Pino do buzzer para alertas
+#define dhtPin 23                   // Pino do sensor DHT22
+#define irrigationRelay 19          // Pino do relé de irrigação                (LED AZUL ACLARO)
+#define ventilationRelay 18         // Pino do relé da ventilação/Resfriamento  (LED AZUL ESCURO)
+#define heatingRelay 5              // Pino do relé da aquecimento              (LED VIOLETA)
+#define speakerPin 17               // Pino do buzzer para alertas
+#define statusLedPinOk 13           // Pino do led verde
+#define acceptableStatusLedPin 12   // Pino do led amarelo
+#define criticalStatusLedPin 14     // Pino do led vermelho
 
 // Inicialização do objeto para o sensor DHT
 DHTesp dhtSensor;
@@ -166,11 +169,11 @@ bool alertCriticalConditions(const TempAndHumidity& data){
   float temperature = data.temperature;
 
   // Verifica se a temperatura está fora do intervalo seguro ou se a umidade está fora do intervalo seguro
-  if(temperature < 12 || temperature > 35 || humidity < 65 || humidity > 75){
+  if(temperature < 12 || temperature > 35 || humidity < 60 || humidity > 80){
     
     // Gera um alerta sonoro
     for(int i = 0; i < 2; i++) {
-      tone(speakerPin, 500, 150); 
+      tone(speakerPin, 226.2, 150); 
       delay(150);
       noTone(speakerPin); 
       delay(200);
@@ -186,6 +189,40 @@ bool alertCriticalConditions(const TempAndHumidity& data){
   return statusAlertCriticalConditions;
 }
 
+// Função que analisa a temperatura e umidade e retorna o status geral de monitoramento
+String statusIndication(const TempAndHumidity& data) {
+  // Declara a variável de status geral
+  String generalStatus;
+
+  // Declaração das variáveis temperatura e umidade
+  float humidity = data.humidity;
+  float temperature = data.temperature;
+
+  // Condição para status "OK"
+  if (temperature >= 20 && temperature <= 26 && humidity >= 65 && humidity <= 75) {
+    digitalWrite(statusLedPinOk, HIGH); // LED Verde aceso
+    digitalWrite(acceptableStatusLedPin, LOW); // LED Amarelo apagado
+    digitalWrite(criticalStatusLedPin, LOW); // LED Vermelho apagado
+    generalStatus = "OK";
+  }
+  // Condição para status "Aceitável"
+  else if ((temperature >= 12 && temperature < 20) || (temperature > 26 && temperature <= 35) || 
+           (humidity >= 60 && humidity < 65) || (humidity > 75 && humidity <= 80)) {
+    digitalWrite(statusLedPinOk, LOW); // LED Verde apagado
+    digitalWrite(acceptableStatusLedPin, HIGH); // LED Amarelo aceso
+    digitalWrite(criticalStatusLedPin, LOW); // LED Vermelho apagado
+    generalStatus = "Aceitável";
+  }
+  // Condição para status "Crítico"
+  else if (temperature < 12 || temperature > 35 || humidity < 60 || humidity > 80) {
+    digitalWrite(statusLedPinOk, LOW); // LED Verde apagado
+    digitalWrite(acceptableStatusLedPin, LOW); // LED Amarelo apagado
+    digitalWrite(criticalStatusLedPin, HIGH); // LED Vermelho aceso
+    generalStatus = "Crítico";
+  }
+
+  return generalStatus;
+}
 
 // Inicialização do código e definição das configurações que precisam ser executadas no início da programa
 void setup() {
@@ -202,6 +239,12 @@ void setup() {
 
   // Define o pino do Buzzer como saída
   pinMode(speakerPin, OUTPUT);
+
+  // Define os pinos de Led do status geral como saída
+  pinMode(statusLedPinOk, OUTPUT);  
+  pinMode(acceptableStatusLedPin, OUTPUT);  
+  pinMode(criticalStatusLedPin, OUTPUT);  
+
 
   lcd.init(); // Inicializa o display lcd
   lcd.backlight(); // Liga a luz de fundo do display lcd
@@ -244,14 +287,19 @@ void loop() {
   // Chama a função de alerta para condições de temperatura e umidade críticas
   bool statusAlertCriticalConditions = alertCriticalConditions(data);
 
+  // Chama a função que analisa a temperatura e umidade e retorna o status geral de monitoramento.
+  String generalStatus = statusIndication(data);
+
   // Imprime os valores de temperatura, umidade e status da irrigação no terminal serial
-  Serial.println("Temperatura: " + String(data.temperature, 1) + 
-                " C, Umidade: " + String(data.humidity, 1) + 
-                " %, Irrigação: " + (statusIrrigation ? "Ligado" : "Desligado") +
-                ", Ventilação/Resfriamento: " + (ventilationAndCoolingStatus ? "Ligado" : "Desligado") +
-                ", Aquecimento: " + (heatingStatus ? "Ligado" : "Desligado") +
-                ", Alerta Estado Crítico: " + (statusAlertCriticalConditions ? "Ligado" : "Desligado")
-                );
+  Serial.println(' ');
+  Serial.println("Status Geral: " + generalStatus + "\n" +
+             "Temperatura: " + String(data.temperature, 1) + "ºC\n" +
+             "Umidade: " + String(data.humidity, 1) + "%\n" +
+             "Irrigação: " + (statusIrrigation ? "Ligado" : "Desligado") + "\n" +
+             "Ventilação/Resfriamento: " + (ventilationAndCoolingStatus ? "Ligado" : "Desligado") + "\n" +
+             "Aquecimento: " + (heatingStatus ? "Ligado" : "Desligado") + "\n" +
+             "Alerta Estado Crítico: " + (statusAlertCriticalConditions ? "Ligado" : "Desligado")
+            );
 
   // Aguarda 1 segundo se alerta crítico estiver ativo ou 2 segundos caso não
   if (statusAlertCriticalConditions){
