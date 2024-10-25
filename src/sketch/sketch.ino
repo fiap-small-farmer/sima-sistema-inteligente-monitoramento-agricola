@@ -5,9 +5,9 @@
 #include <LiquidCrystal_I2C.h>
 
 #define dhtPin 23                   // Pino do sensor DHT22
-#define irrigationPwmPin 19         // Pino do motor para controle PWM de irrigação (LED AZUL ACLARO)
-#define ventilationRelay 18         // Pino do relé da ventilação/Resfriamento      (LED AZUL ESCURO)
-#define heatingRelay 5              // Pino do relé da aquecimento                  (LED VIOLETA)
+#define irrigationPwmPin 19         // Pino do motor para controle PWM de irrigação (LED LARANJA)
+#define ventilationRelay 18         // Pino do relé da ventilação/Resfriamento      (LED AZUL)
+#define heatingRelay 5              // Pino do relé da aquecimento                  (LED ROXO)
 #define speakerPin 17               // Pino do buzzer para alertas
 #define statusLedPinOk 13           // Pino do led verde
 #define acceptableStatusLedPin 12   // Pino do led amarelo
@@ -21,7 +21,7 @@ DHTesp dhtSensor;
 // Inicialização do objeto LCD
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-// Variável para armazenar o estado da irrigação (1 = ligado, 0 = desligado)
+// Variável para armazenar o estado da irrigação
 bool irrigationActive = true;
 
 // Função que formata a escrita da temp. e umid. mediante os valores e exibi no display LCD
@@ -339,6 +339,12 @@ void loop() {
   // Verifica se há erro no sensor
   if (isnan(data.temperature) || isnan(data.humidity)) {
     Serial.println("Falha na leitura do sensor DHT!");
+
+    // Exibe falha no display LCD
+    lcd.setCursor(2, 0);
+    lcd.print("Falha Sensor");
+    lcd.setCursor(2, 1);
+    lcd.print("DHT22");
     return;
   }
 
@@ -381,5 +387,5 @@ void loop() {
                 );
                 
   // Delay para próximo monitoramento
-  statusAlertCriticalConditions ? delay(1000) : delay(2000);
+  statusAlertCriticalConditions ? delay(1000) : delay(2000); 
 }
