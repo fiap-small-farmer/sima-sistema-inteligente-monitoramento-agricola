@@ -228,7 +228,7 @@ String statusIndication(const TempAndHumidity& data) {
   float temperature = data.temperature;
 
   // Condição para status "OK"
-  if (temperature >= 20 && temperature <= 26 && humidity >= 65 && humidity <= 75) {
+  if (temperature >= 20 && temperature <= 26 && humidity >= 65 && humidity <= 75 && irrigationActive == true) {
     digitalWrite(statusLedPinOk, HIGH); // LED Verde aceso
     digitalWrite(acceptableStatusLedPin, LOW); // LED Amarelo apagado
     digitalWrite(criticalStatusLedPin, LOW); // LED Vermelho apagado
@@ -236,14 +236,14 @@ String statusIndication(const TempAndHumidity& data) {
   }
   // Condição para status "Aceitável"
   else if ((temperature >= 12 && temperature < 20) || (temperature > 26 && temperature <= 35) ||
-           (humidity >= 60 && humidity < 65) || (humidity > 75 && humidity <= 80)) {
+           (humidity >= 60 && humidity < 65) || (humidity > 75 && humidity <= 80) && irrigationActive == true) {
     digitalWrite(statusLedPinOk, LOW); // LED Verde apagado
     digitalWrite(acceptableStatusLedPin, HIGH); // LED Amarelo aceso
     digitalWrite(criticalStatusLedPin, LOW); // LED Vermelho apagado
     generalStatus = "Aceitável";
   }
   // Condição para status "Crítico"
-  else if (temperature < 12 || temperature > 35 || humidity < 60 || humidity > 80) {
+  else if (temperature < 12 || temperature > 35 || humidity < 60 || humidity > 80 || irrigationActive == false) {
     digitalWrite(statusLedPinOk, LOW); // LED Verde apagado
     digitalWrite(acceptableStatusLedPin, LOW); // LED Amarelo apagado
     digitalWrite(criticalStatusLedPin, HIGH); // LED Vermelho aceso
@@ -380,12 +380,6 @@ void loop() {
                  "Alerta Estado Crítico: " + (statusAlertCriticalConditions ? "Ligado" : "Desligado")
                 );
                 
-  // 
-
-  if(irrigationActive == false){
-    delay(0)
-  } else{
-    statusAlertCriticalConditions ? delay(1000) : delay(2000);
-  }
-  
+  // Delay para próximo monitoramento
+  statusAlertCriticalConditions ? delay(1000) : delay(2000);
 }
