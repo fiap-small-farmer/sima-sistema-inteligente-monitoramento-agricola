@@ -9,7 +9,7 @@
       "id": "dht1",
       "top": -38.1,
       "left": -63,
-      "attrs": { "temperature": "22", "humidity": "60" }
+      "attrs": { "temperature": "26.1", "humidity": "74" }
     },
     {
       "type": "wokwi-lcd1602",
@@ -113,14 +113,19 @@
       "rotate": 180,
       "attrs": { "value": "150" }
     },
-    { "type": "wokwi-junction", "id": "j1", "top": -139.2, "left": -427.2, "attrs": {} }
+    {
+      "type": "wokwi-hc-sr04",
+      "id": "ultrasonic1",
+      "top": 366.3,
+      "left": -176.9,
+      "attrs": { "distance": "88" }
+    }
   ],
   "connections": [
     [ "esp:TX", "$serialMonitor:RX", "", [] ],
     [ "esp:RX", "$serialMonitor:TX", "", [] ],
     [ "dht1:SDA", "esp:23", "#8f4814", [ "v48", "h-28.7" ] ],
     [ "dht1:GND", "esp:GND.2", "black", [ "v0" ] ],
-    [ "dht1:VCC", "esp:5V", "red", [ "v230.4", "h-182.55" ] ],
     [ "lcd1:GND", "esp:GND.2", "black", [ "h-28.8", "v105.6" ] ],
     [ "lcd1:SDA", "esp:21", "#8f4814", [ "h-19.2", "v134.6" ] ],
     [ "esp:22", "lcd1:SCL", "#8f4814", [ "h105.6", "v-96" ] ],
@@ -146,11 +151,16 @@
     [ "r4:1", "esp:GND.2", "black", [ "v0", "h9.6", "v-57.6", "h-278.4" ] ],
     [ "r6:1", "r5:1", "black", [ "v0", "h9.6", "v-19.2" ] ],
     [ "r5:1", "r4:1", "black", [ "v0", "h9.6", "v-19.2" ] ],
-    [ "led5:A", "esp:13", "green", [ "v0", "h-240", "v336" ] ],
-    [ "led4:A", "esp:12", "green", [ "v9.6", "h-288", "v316.8" ] ],
-    [ "led6:A", "esp:14", "green", [ "v19.2", "h-336", "v288" ] ],
-    [ "led1:A", "esp:19", "green", [ "v0" ] ],
-    [ "relay2:COM", "vcc1:VCC", "red", [ "h20.4", "v-126.2" ] ]
+    [ "led5:A", "esp:13", "#8f4814", [ "v0", "h-240", "v336" ] ],
+    [ "led4:A", "esp:12", "#8f4814", [ "v9.6", "h-288", "v316.8" ] ],
+    [ "led6:A", "esp:14", "#8f4814", [ "v19.2", "h-336", "v288" ] ],
+    [ "led1:A", "esp:19", "#8f4814", [ "v0" ] ],
+    [ "relay2:COM", "vcc1:VCC", "red", [ "h20.4", "v-126.2" ] ],
+    [ "ultrasonic1:VCC", "esp:5V", "red", [ "v28.8", "h-86.4", "v-201.6" ] ],
+    [ "ultrasonic1:GND", "esp:GND.2", "black", [ "v9.6", "h85.2", "v-355.2" ] ],
+    [ "ultrasonic1:ECHO", "esp:15", "#8f4814", [ "v19.2", "h104.8", "v-220.8" ] ],
+    [ "ultrasonic1:TRIG", "esp:2", "#8f4814", [ "v28.8", "h124.4", "v-240" ] ],
+    [ "dht1:VCC", "lcd1:VCC", "red", [ "v9.6", "h-19.2", "v-134.4", "h67.2", "v67.2", "h28.8" ] ]
   ],
   "dependencies": {}
 }
