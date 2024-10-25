@@ -103,6 +103,15 @@ float controlIrrigationPWM(const TempAndHumidity& data, float waterLevelPercenta
     // Controle da irrigação baseado no nível de água
     if (waterLevelPercentage <= 20) {
         irrigationActive = false;  // Desliga a irrigação
+
+        // Gera um alerta sonoro para nível do tanque baixo
+        for (int i = 0; i < 4; i++) {
+          tone(speakerPin, 226.2, 150);
+          delay(150);
+          noTone(speakerPin);
+          delay(200);
+        }
+
     } else if (waterLevelPercentage >= 50) {
         irrigationActive = true;   // Religa a irrigação
     }
@@ -123,6 +132,7 @@ float controlIrrigationPWM(const TempAndHumidity& data, float waterLevelPercenta
         }
     } else {
         waterFlowInPercentage = 0;  // Se a irrigação está desligada, fluxo de água é zero
+        noTone(speakerPin); // Desativa o som de alerta
     }
 
     // Ajuste do PWM da bomba (somente se água está no nível adequado)
@@ -130,7 +140,6 @@ float controlIrrigationPWM(const TempAndHumidity& data, float waterLevelPercenta
 
     return waterFlowInPercentage;
 }
-
 
 // Função para controle da ventilação e resfriamento
 bool ventilationAndCoolingControl(const TempAndHumidity& data) {
@@ -371,6 +380,12 @@ void loop() {
                  "Alerta Estado Crítico: " + (statusAlertCriticalConditions ? "Ligado" : "Desligado")
                 );
                 
-  // Aguarda 1 segundo se alerta crítico estiver ativo ou 2 segundos caso não
-  statusAlertCriticalConditions ? delay(1000) : delay(2000);
+  // 
+
+  if(irrigationActive == false){
+    delay(0)
+  } else{
+    statusAlertCriticalConditions ? delay(1000) : delay(2000);
+  }
+  
 }
