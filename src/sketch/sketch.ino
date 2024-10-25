@@ -24,6 +24,9 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 // Variável para armazenar o estado da irrigação
 bool irrigationActive = true;
 
+// Declara a variável de status para alerta crítico de condições de temperatura e umidade
+bool statusAlertCriticalConditions = false;
+
 // Função que formata a escrita da temp. e umid. mediante os valores e exibi no display LCD
 void displayLcd(const TempAndHumidity& data) {
   // Declaração das variáveis temperatura e umidade
@@ -190,9 +193,6 @@ bool heatingControl(const TempAndHumidity& data) {
 
 // Função para gerar um alerta sonoro em casos de estados críticos
 bool alertCriticalConditions(const TempAndHumidity& data) {
-  // Declara a variável de status para alerta crítico de condições de temperatura e umidade
-  bool statusAlertCriticalConditions;
-
   // Declaração das variáveis temperatura e umidade
   float humidity = data.humidity;
   float temperature = data.temperature;
@@ -227,27 +227,34 @@ String statusIndication(const TempAndHumidity& data) {
   float humidity = data.humidity;
   float temperature = data.temperature;
 
+  // Condição para status "Crítico"
+  if (statusAlertCriticalConditions == true) {
+    digitalWrite(statusLedPinOk, LOW); // LED Verde apagado
+    digitalWrite(acceptableStatusLedPin, LOW); // LED Amarelo apagado
+    digitalWrite(criticalStatusLedPin, HIGH); // LED Vermelho aceso
+    generalStatus = "Crítico";
+  }
   // Condição para status "OK"
-  if (temperature >= 20 && temperature <= 26 && humidity >= 65 && humidity <= 75 && irrigationActive == true) {
+  else if (temperature >= 20 && temperature <= 26 && humidity >= 65 && humidity <= 75 && irrigationActive == true) {
     digitalWrite(statusLedPinOk, HIGH); // LED Verde aceso
     digitalWrite(acceptableStatusLedPin, LOW); // LED Amarelo apagado
     digitalWrite(criticalStatusLedPin, LOW); // LED Vermelho apagado
     generalStatus = "OK";
   }
   // Condição para status "Aceitável"
-  else if ((temperature >= 12 && temperature < 20) || (temperature > 26 && temperature <= 35) ||
-           (humidity >= 60 && humidity < 65) || (humidity > 75 && humidity <= 80) && irrigationActive == true) {
+  else if (((temperature >= 12 && temperature < 20) || (temperature > 26 && temperature <= 35) ||
+            (humidity >= 60 && humidity < 65) || (humidity > 75 && humidity <= 80)) && irrigationActive == true) {
     digitalWrite(statusLedPinOk, LOW); // LED Verde apagado
     digitalWrite(acceptableStatusLedPin, HIGH); // LED Amarelo aceso
     digitalWrite(criticalStatusLedPin, LOW); // LED Vermelho apagado
     generalStatus = "Aceitável";
   }
-  // Condição para status "Crítico"
-  else if (temperature < 12 || temperature > 35 || humidity < 60 || humidity > 80 || irrigationActive == false) {
+  // Condição para status "Crítico" (caso não cubra os anteriores)
+  else {
     digitalWrite(statusLedPinOk, LOW); // LED Verde apagado
     digitalWrite(acceptableStatusLedPin, LOW); // LED Amarelo apagado
     digitalWrite(criticalStatusLedPin, HIGH); // LED Vermelho aceso
-    generalStatus = "Crítico";
+    generalStatus = "Crítico"; // Pode ajustar a mensagem se necessário
   }
 
   return generalStatus;
@@ -375,17 +382,19 @@ void loop() {
 
   // Imprime os valores de monitoramento
   Serial.println(" ");
-  Serial.println("Status Geral: " + generalStatus + "\n" +
+  Serial.println("Status Geral: " +  (statusAlertCriticalConditions ? "Temperatura ou Umidade prejudicial" : generalStatus) + "\n" +
                  "Temperatura: " + String(data.temperature, 1) + "ºC\n" +
                  "Umidade: " + String(data.humidity, 1) + "%\n" +
-                 "Nível de água para Irrigação: " + String(waterLevelPercentage, 0) + "%\n" +
+                 "Nível Tanque de Água Irrigação: " + String(waterLevelPercentage, 0) + "%\n" +
                  "Irrigação: " + (statusIrrigation > 0 ? "Ligado" : "Desligado") + "\n" +
                  "Fluxo de Irrigação: " + (irrigationActive ? String(statusIrrigation) + "%" : "Nível de água baixo") + "\n" +
                  "Ventilação/Resfriamento: " + (ventilationAndCoolingStatus ? "Ligado" : "Desligado") + "\n" +
                  "Aquecimento: " + (heatingStatus ? "Ligado" : "Desligado") + "\n" +
-                 "Alerta Estado Crítico: " + (statusAlertCriticalConditions ? "Ligado" : "Desligado")
+                 "Alerta Estado Crítico: " + (statusAlertCriticalConditions || !irrigationActive ? "Ligado" : "Desligado")
                 );
                 
   // Delay para próximo monitoramento
-  statusAlertCriticalConditions ? delay(1000) : delay(2000); 
+  statusAlertCriticalConditions ? delay(1000) : delay(2000);
+
+  
 }
