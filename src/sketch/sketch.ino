@@ -14,6 +14,8 @@
 #define criticalStatusLedPin 14     // Pino do led vermelho
 #define pinWaterLevelTrigger 2      // Pino Trigger nível água
 #define echoWaterLevelPin 15        // Pino Echo nível água
+#define PirPresenceSensorPin 4      // Pino sensor de presença PIR
+#define ldrPin 27                   // Pino sensor LDR
 
 // Inicialização do objeto para o sensor DHT
 DHTesp dhtSensor;
@@ -26,6 +28,12 @@ bool irrigationActive = true;
 
 // Declara a variável de status para alerta crítico de condições de temperatura e umidade
 bool statusAlertCriticalConditions = false;
+
+// declara a variável para detecção de movimento
+int motionDetected = false;
+
+// Variável para declarar a condição climatica medida pelo LDR
+String climaticConditions;
 
 // Função que formata a escrita da temp. e umid. mediante os valores e exibi no display LCD
 void displayLcd(const TempAndHumidity& data) {
@@ -94,13 +102,13 @@ void updatedisplayTempAndHumid(const TempAndHumidity& data) {
   }
 }
 
-// Função para controle do fluxo de água do sistema de irrigação com PWM
-float controlIrrigationPWM(const TempAndHumidity& data, float waterLevelPercentage) {
+// Função para controle do fluxo de água do sistema de irrigação com PWM e Sensor de Luminosidade LDR
+float controlIrrigationPWM(const TempAndHumidity& data, float waterLevelPercentage, int ldrPinValue) {
     // Declaração das variáveis temperatura e umidade
     float temperature = data.temperature;
     float humidity = data.humidity;
 
-    // Declaração variável do fluxo de água %
+    // Declaração variável do fluxo de água em %
     float waterFlowInPercentage = 0;
 
     // Controle da irrigação baseado no nível de água
@@ -109,12 +117,11 @@ float controlIrrigationPWM(const TempAndHumidity& data, float waterLevelPercenta
 
         // Gera um alerta sonoro para nível do tanque baixo
         for (int i = 0; i < 4; i++) {
-          tone(speakerPin, 226.2, 150);
-          delay(150);
-          noTone(speakerPin);
-          delay(200);
+            tone(speakerPin, 226.2, 150);
+            delay(150);
+            noTone(speakerPin);
+            delay(200);
         }
-
     } else if (waterLevelPercentage >= 50) {
         irrigationActive = true;   // Religa a irrigação
     }
@@ -133,6 +140,40 @@ float controlIrrigationPWM(const TempAndHumidity& data, float waterLevelPercenta
         else if (humidity > 65 && humidity <= 75) {
             waterFlowInPercentage = map(humidity, 66, 75, 49, 0);  // Mapeia fluxo de <50% a 0%
         }
+
+        // Lê o valor do LDR no pino analógico
+        int ldrValue = analogRead(ldrPinValue);
+
+        // Conversão manual de LDR para lux com escala inversa
+        float luxValue;
+        if (ldrValue <= 4063) {
+            // Mapear inversamente, 32 a 4063 LDR corresponde a 100000 a 0.1 lux
+            luxValue = map(ldrValue, 32, 4063, 100000, 0.1); 
+        } else {
+            luxValue = 0.1;  // Valores acima do intervalo podem ser tratados como iluminação mínima
+        }
+
+        // Ajuste adicional com base na luminosidade (LDR)
+        float lightAdjustmentFactor;
+
+        if (luxValue < 5000) {
+            lightAdjustmentFactor = 1.5; // Dias nublados: baixa luminosidade
+            climaticConditions = "Nublado";
+
+        } else if (luxValue >= 5000 && luxValue <= 99999) {
+            lightAdjustmentFactor = map(luxValue, 5000, 99999, 1.5, 0.5);
+            climaticConditions = "Parcialmente Nublado";
+
+        } else {
+            lightAdjustmentFactor = 0.5; // Luz excessiva: acima de 99999 lux (dias ensolarados)
+            climaticConditions = "Ensolarado";
+        }
+
+        // Aplica o fator de ajuste de luz ao fluxo de água calculado
+        waterFlowInPercentage *= lightAdjustmentFactor;
+
+        // Limita o valor do fluxo de água para entre 0 e 100%
+        waterFlowInPercentage = constrain(waterFlowInPercentage, 0, 100);
     } else {
         waterFlowInPercentage = 0;  // Se a irrigação está desligada, fluxo de água é zero
         noTone(speakerPin); // Desativa o som de alerta
@@ -143,6 +184,7 @@ float controlIrrigationPWM(const TempAndHumidity& data, float waterLevelPercenta
 
     return waterFlowInPercentage;
 }
+
 
 // Função para controle da ventilação e resfriamento
 bool ventilationAndCoolingControl(const TempAndHumidity& data) {
@@ -290,6 +332,32 @@ float getWaterLevelPercentage(float distanceToWater, float tankHeight) {
     return waterLevel;
 }
 
+// Função para Detectar Movimento de pessoas ou animais na plantação de tomates
+void detectionOfMovementOfPeopleOrAnimals(int motionDetected){
+  // Se ocorrer detecção de movimento emiti o alerta sonoro
+  if (motionDetected == HIGH) {
+    // Gera um alerta sonoro em forma de sirene
+    for (int i = 0; i < 3; i++) {
+      for (int freq = 200; freq < 600; freq += 20) {
+        tone(speakerPin, freq);
+        delay(25); 
+      }
+      
+      for (int freq = 600; freq > 200; freq -= 20) {
+        tone(speakerPin, freq);
+        delay(25);
+      }
+
+      noTone(speakerPin);
+      delay(50);
+    }
+
+  } else {
+    // Desabilita alerta sonoro
+    noTone(speakerPin);
+  }
+}
+
 // Inicialização do código e definição das configurações que precisam ser executadas no início da programa
 void setup() {
   // Inicializa a comunicação serial com velocidade de 115200 bps (bits por segundo)
@@ -317,6 +385,13 @@ void setup() {
   pinMode(pinWaterLevelTrigger, OUTPUT);
   pinMode(echoWaterLevelPin, INPUT);
 
+  // Define o pino do sensor PIR (Presença) para detecção de movimento como entrada de sinal
+  pinMode(PirPresenceSensorPin, INPUT);
+
+  // Define o pino do sensor LDR para detecção de Luminosidade
+  pinMode(ldrPin, INPUT);
+
+
   lcd.init(); // Inicializa o display lcd
   lcd.backlight(); // Liga a luz de fundo do display lcd
 
@@ -331,7 +406,7 @@ void setup() {
   for (int i = 11; i <= 13; i++) {
     lcd.setCursor(i, 1);
     lcd.print(".");
-    delay(500);
+    delay(250);
   }
 
   // Limpa o display LCD
@@ -365,8 +440,8 @@ void loop() {
   float tankHeight = 4; // Altura do tanque
   float waterLevelPercentage = getWaterLevelPercentage(distanceToWater, tankHeight);
 
-  // Chama a função que controla a irrigação por PWM e retorna o status
-  float statusIrrigation = controlIrrigationPWM(data, waterLevelPercentage);
+  // Chama a função que controla a irrigação e retorna o status
+  float statusIrrigation = controlIrrigationPWM(data, waterLevelPercentage, ldrPin);
 
   // Chama a função de controle da ventilação/resfriamento e retorna o status
   bool ventilationAndCoolingStatus = ventilationAndCoolingControl(data);
@@ -377,8 +452,17 @@ void loop() {
   // Chama a função de alerta para condições de temperatura e umidade críticas
   bool statusAlertCriticalConditions = alertCriticalConditions(data);
 
-  // Chama a função que analisa a temperatura e umidade e retorna o status geral de monitoramento.
+  // Chama a função que analisa a temperatura e umidade e retorna o status geral de monitoramento
   String generalStatus = statusIndication(data);
+
+  // Chama a função para Detectar Movimento de pessoas ou animais na plantação de tomates
+  detectionOfMovementOfPeopleOrAnimals(motionDetected);
+
+  // Lê o valor do sensor PIR
+  motionDetected = digitalRead(PirPresenceSensorPin);
+  
+  // Define a variável para detecção de movimento para ser usado no log do monitor serial
+  bool detectedMovement = motionDetected == HIGH ? true : false;
 
   // Imprime os valores de monitoramento
   Serial.println(" ");
@@ -390,11 +474,11 @@ void loop() {
                  "Fluxo de Irrigação: " + (irrigationActive ? String(statusIrrigation) + "%" : "Nível de água baixo") + "\n" +
                  "Ventilação/Resfriamento: " + (ventilationAndCoolingStatus ? "Ligado" : "Desligado") + "\n" +
                  "Aquecimento: " + (heatingStatus ? "Ligado" : "Desligado") + "\n" +
-                 "Alerta Estado Crítico: " + (statusAlertCriticalConditions || !irrigationActive ? "Ligado" : "Desligado")
+                 "Alerta Estado Crítico: " + (statusAlertCriticalConditions || !irrigationActive ? "Ligado" : "Desligado") + "\n" +
+                 "Detecção de Movimento: " + (detectedMovement ? "Ativado" : "Desativado") + "\n" +
+                 "Condições Climáticas: " + climaticConditions + "\n"
                 );
                 
   // Delay para próximo monitoramento
   statusAlertCriticalConditions ? delay(1000) : delay(2000);
-
-  
 }
