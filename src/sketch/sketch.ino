@@ -102,7 +102,7 @@ void updatedisplayTempAndHumid(const TempAndHumidity& data) {
   }
 }
 
-// Função para controle do fluxo de água do sistema de irrigação com PWM e Sensor de Luminosidade LDR
+// Função para controle do fluxo de irrigação mediante a temperatura, umidade e luminosidade
 float controlIrrigationPWM(const TempAndHumidity& data, float waterLevelPercentage, int ldrPinValue) {
     // Declaração das variáveis temperatura e umidade
     float temperature = data.temperature;
@@ -121,6 +121,7 @@ float controlIrrigationPWM(const TempAndHumidity& data, float waterLevelPercenta
             delay(150);
             noTone(speakerPin);
             delay(200);
+
         }
     } else if (waterLevelPercentage >= 50) {
         irrigationActive = true;   // Religa a irrigação
@@ -128,45 +129,36 @@ float controlIrrigationPWM(const TempAndHumidity& data, float waterLevelPercenta
 
     // Apenas realiza o controle do fluxo de água se a irrigação estiver ativa
     if (irrigationActive) {
-        // Lógica para desligar a irrigação com base em condições de clima inadequadas
         if (temperature < 20 || temperature > 26 || humidity > 75) {
             waterFlowInPercentage = 0;  // Desativa irrigação (condições inadequadas)
-        }
-        // Fluxo proporcional para umidade entre 0% e 65% com temperatura ideal
-        else if (humidity <= 65) {
+
+        } else if (humidity <= 65) {
             waterFlowInPercentage = map(humidity, 0, 65, 100, 50);  // Mapeia fluxo de 100% a 50%
-        }
-        // Fluxo proporcional para umidade entre >65% e <=75% com temperatura ideal
-        else if (humidity > 65 && humidity <= 75) {
-            waterFlowInPercentage = map(humidity, 66, 75, 49, 0);  // Mapeia fluxo de <50% a 0%
+
+        } else if (humidity > 65 && humidity <= 75) {
+            waterFlowInPercentage = map(humidity, 66, 75, 49, 0);  // Mapeia fluxo de 49% a 0%
         }
 
         // Lê o valor do LDR no pino analógico
         int ldrValue = analogRead(ldrPinValue);
+        
+        // Mapeamento dinâmico de luxValue para um ajuste mais sensível
+        float luxValue = map(ldrValue, 32, 4063, 100000, 0.1); 
 
-        // Conversão manual de LDR para lux com escala inversa
-        float luxValue;
-        if (ldrValue <= 4063) {
-            // Mapear inversamente, 32 a 4063 LDR corresponde a 100000 a 0.1 lux
-            luxValue = map(ldrValue, 32, 4063, 100000, 0.1); 
-        } else {
-            luxValue = 0.1;  // Valores acima do intervalo podem ser tratados como iluminação mínima
-        }
-
-        // Ajuste adicional com base na luminosidade (LDR)
+        // Ajuste adicional com base na luminosidade
         float lightAdjustmentFactor;
 
         if (luxValue < 5000) {
-            lightAdjustmentFactor = 1.5; // Dias nublados: baixa luminosidade
             climaticConditions = "Nublado";
+            lightAdjustmentFactor = 2.5;
 
         } else if (luxValue >= 5000 && luxValue <= 99999) {
-            lightAdjustmentFactor = map(luxValue, 5000, 99999, 1.5, 0.5);
             climaticConditions = "Parcialmente Nublado";
+            lightAdjustmentFactor = 1.0 + log10(100000 / (luxValue + 1)); // Maior sensibilidade
 
         } else {
-            lightAdjustmentFactor = 0.5; // Luz excessiva: acima de 99999 lux (dias ensolarados)
             climaticConditions = "Ensolarado";
+            lightAdjustmentFactor = 0.5;
         }
 
         // Aplica o fator de ajuste de luz ao fluxo de água calculado
@@ -174,6 +166,7 @@ float controlIrrigationPWM(const TempAndHumidity& data, float waterLevelPercenta
 
         // Limita o valor do fluxo de água para entre 0 e 100%
         waterFlowInPercentage = constrain(waterFlowInPercentage, 0, 100);
+
     } else {
         waterFlowInPercentage = 0;  // Se a irrigação está desligada, fluxo de água é zero
         noTone(speakerPin); // Desativa o som de alerta
@@ -184,7 +177,6 @@ float controlIrrigationPWM(const TempAndHumidity& data, float waterLevelPercenta
 
     return waterFlowInPercentage;
 }
-
 
 // Função para controle da ventilação e resfriamento
 bool ventilationAndCoolingControl(const TempAndHumidity& data) {
