@@ -340,10 +340,60 @@ O diagrama completo do circuito eletrônico e código em C++ pode ser acessado n
 O Sistema Inteligente de Monitoramento Agrícola (S.I.M.A) para o **cultivo de tomates** representa um avanço significativo na automação e sustentabilidade da agricultura moderna. Com o uso de sensores de temperatura, umidade, luminosidade e detecção de intrusos, o SIMA oferece um monitoramento completo e em tempo real das condições essenciais ao cultivo de tomates, possibilitando uma gestão eficiente e adaptável. A automação dos processos de irrigação, ventilação e aquecimento não só garante que as plantas estejam constantemente em condições ideais, mas também reduz a necessidade de intervenção manual e otimiza o uso de recursos naturais, como a água e a energia.
 O impacto positivo do SIMA se reflete em colheitas mais produtivas e saudáveis, contribuindo para a economia de recursos e promovendo práticas agrícolas mais sustentáveis. O sistema não apenas facilita a vida dos agricultores, mas também ajuda a preservar o meio ambiente, mostrando-se como uma ferramenta fundamental para o futuro da agricultura inteligente. Em suma, o SIMA integra tecnologia e agricultura de maneira inovadora, promovendo colheitas mais abundantes e de qualidade superior, alinhadas às demandas de um futuro sustentável.
 
-## Referências para o desenvolvimento do projeto:
+## 📝 Referências para o desenvolvimento do projeto:
 
 *	https://www.decorfacil.com/como-plantar-tomate/
 *	https://www.advancingalternatives.com/blog/controlling-humidity-in-tomato-production/
 *	https://canaldohorticultor.com.br/informacoes-tecnicas-para-cultivar-tomates/
 *	https://www.bhg.com/gardening/vegetable/vegetables/how-to-plant-and-grow-tomatoes/
 *	https://www.tomatonews.com/en/how-are-sensors-revolutionizing-tomato-farming-practices_2_2404.html
+
+## 📁 Estrutura de Pastas
+
+#### Na raiz do projeto, encontram-se as seguintes pastas e arquivos:
+
+- **docs**: Contém documentos relacionados ao projeto, incluindo o diagrama do circuito eletrônico, fluxograma de montagem dos componentes e sensores, relatório de planejamento para o desenvolvimento inicial e o relatório principal que descreve detalhadamente o projeto e suas funcionalidades.
+
+- **libraries**: Armazena as bibliotecas utilizadas no código para o funcionamento correto do sensor DHT22 (sensor de temperatura e umidade) e do display LCD 16x2, que opera com o protocolo de comunicação I2C.
+
+- **public**: Reúne as imagens usadas no arquivo `readme.md` para apresentar o projeto no GitHub.
+
+- **src**: Contém o sketch (código em C++ desenvolvido para o microcontrolador ESP32), o log de compilação, o arquivo JSON do diagrama para execução no simulador Wokwi, e um arquivo TXT com uma descrição das bibliotecas utilizadas no sketch.
+
+- **tests**: Inclui arquivos para testes de funcionalidade do projeto. Abrange uma tabela em formato XLSX para execução e registro dos testes pelo avaliador, além dos testes realizados durante o desenvolvimento para validação de cada funcionalidade.
+
+- **readme.md**: Documento de apresentação do projeto no GitHub, explicando suas funcionalidades em formato Markdown.
+
+- **link_simulador.txt**: Arquivo que contém o link de acesso ao simulador Wokwi e ao código do projeto. 
+
+## 🔧 Como executar o código
+
+### 🛢 Fase 1 - Acesse o link abaixo:
+
+Acesse o link abaixo, irá redirecionar para o site de simulação [WOKWI](https://wokwi.com/projects/412397881610314753) onde consta o código do projeto, circuito eletrônico, ambiente de simulação e log de monitoramento exibido no terminal serial.
+
+#### Link: https://wokwi.com/projects/412397881610314753
+
+### 🛢 Fase 2 - Identificando a tela de simulação e rodando o projeto
+
+<p align="center">
+<a href= "#"><img src="public/identificando_tela_simulacao.png" alt="" border="0" width=80% height=80%></a>
+</p>
+
+**1.** Nome do código do projeto, arquivo json para construção do diagrama, bibliotecas usadas no código e gerenciamento de bibliotecas.
+
+**2.** Código do projeto em C++, organizado por funções e programa principal, consta comentários para melhor entendimento.
+
+**3.** Serial monitor onde consta o log de monitoramento, será exibindo ao iniciar a simulação.
+
+**4.** Circuito eletrônico e ambiente de simulação.
+
+**5.** Botões para iniciar a simulação, pausar o parar.
+
+## 🗃 Histórico de lançamentos
+
+* 1.0.0 - 27/10/2024
+#
+## 📋 Licença
+
+<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><p xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/"><a property="dct:title" rel="cc:attributionURL" href="https://github.com/agodoi/template">MODELO GIT FIAP</a> por <a rel="cc:attributionURL dct:creator" property="cc:attributionName" href="https://fiap.com.br">Fiap</a> está licenciado sobre <a href="http://creativecommons.org/licenses/by/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">Attribution 4.0 International</a>.
